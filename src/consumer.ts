@@ -1,12 +1,12 @@
 import { AWSError } from 'aws-sdk';
 import * as SQS from 'aws-sdk/clients/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
-import * as Debug from 'debug';
+//import * as Debug from 'debug';
 import { EventEmitter } from 'events';
 import { autoBind } from './bind';
 import { SQSError, TimeoutError } from './errors';
 
-const debug = Debug('sqs-consumer');
+//const debug = Debug('sqs-consumer');
 
 type ReceieveMessageResponse = PromiseResult<SQS.Types.ReceiveMessageResult, AWSError>;
 type ReceiveMessageRequest = SQS.Types.ReceiveMessageRequest;
@@ -24,6 +24,7 @@ interface TimeoutResponse {
 }
 
 function createTimeout(duration: number): TimeoutResponse[] {
+  console.log('in createTimeout'); 
   let timeout;
   const pending = new Promise((_, reject) => {
     timeout = setTimeout((): void => {
@@ -167,21 +168,21 @@ export class Consumer extends EventEmitter {
 
   public start(): void {
     if (this.stopped) {
-      debug('Starting consumer');
+      console.log('Starting consumer');
       this.stopped = false;
       this.poll();
     }
   }
 
   public stop(): void {
-    debug('Stopping consumer');
+    console.log('Stopping consumer');
     this.stopped = true;
   }
 
   private async handleSqsResponse(response: ReceieveMessageResponse): Promise<void> {
-    debug('Received SQS response');
-    debug(response);
-
+    console.log('In private async handleSqsResponse');
+    console.log('Received SQS response: ');
+    console.log(response);
     if (response) {
       if (hasMessages(response)) {
         if (this.handleMessageBatch) {
@@ -193,13 +194,14 @@ export class Consumer extends EventEmitter {
         this.emit('response_processed');
       } else {
         this.emit('empty');
+        console.log('empty');
       }
     }
   }
 
   private async processMessage(message: SQSMessage): Promise<void> {
     this.emit('message_received', message);
-
+    console.log('in processMessage'); 
     let heartbeat;
     try {
       if (this.heartbeatInterval) {
@@ -222,17 +224,20 @@ export class Consumer extends EventEmitter {
   }
 
   private async receiveMessage(params: ReceiveMessageRequest): Promise<ReceieveMessageResponse> {
+    console.log('in receiveMessage'); 
     try {
+      console.log('try: return await this.sqs')
       return await this.sqs
         .receiveMessage(params)
         .promise();
     } catch (err) {
+      console.log(`SQS receive message failed: ${err.message}`);
       throw toSQSError(err, `SQS receive message failed: ${err.message}`);
     }
   }
 
   private async deleteMessage(message: SQSMessage): Promise<void> {
-    debug('Deleting message %s', message.MessageId);
+    console.log('Deleting message %s', message.MessageId);
 
     const deleteParams = {
       QueueUrl: this.queueUrl,
@@ -252,7 +257,8 @@ export class Consumer extends EventEmitter {
     let timeout;
     let pending;
     try {
-      if (this.handleMessageTimeout) {
+     console.log('In executeHandler try before if');
+     if (this.handleMessageTimeout) {
         [timeout, pending] = createTimeout(this.handleMessageTimeout);
         await Promise.race([
           this.handleMessage(message),
@@ -274,6 +280,7 @@ export class Consumer extends EventEmitter {
   }
 
   private async changeVisabilityTimeout(message: SQSMessage, timeout: number): Promise<PromiseResult<any, AWSError>> {
+    console.log('in changeVisibilityTimeout'); 
     try {
       return this.sqs
         .changeMessageVisibility({
@@ -288,6 +295,7 @@ export class Consumer extends EventEmitter {
   }
 
   private emitError(err: Error, message: SQSMessage): void {
+    console.log('in emitError'); 
     if (err.name === SQSError.name) {
       this.emit('error', err, message);
     } else if (err instanceof TimeoutError) {
@@ -302,8 +310,7 @@ export class Consumer extends EventEmitter {
       this.emit('stopped');
       return;
     }
-
-    debug('Polling for messages');
+    console.log('Polling for messages');
     const receiveParams = {
       QueueUrl: this.queueUrl,
       AttributeNames: this.attributeNames,
@@ -314,12 +321,14 @@ export class Consumer extends EventEmitter {
     };
 
     let currentPollingTimeout = this.pollingWaitTimeMs;
+    console.log('Current polling timeout: ');
+    console.log(currentPollingTimeout);
     this.receiveMessage(receiveParams)
       .then(this.handleSqsResponse)
       .catch((err) => {
         this.emit('error', err);
         if (isConnectionError(err)) {
-          debug('There was an authentication error. Pausing before retrying.');
+          console.log('There was an authentication error. Pausing before retrying.');
           currentPollingTimeout = this.authenticationErrorTimeout;
         }
         return;
@@ -331,6 +340,7 @@ export class Consumer extends EventEmitter {
   }
 
   private async processMessageBatch(messages: SQSMessage[]): Promise<void> {
+    console.log('in processMessageBatch'); 
     messages.forEach((message) => {
       this.emit('message_received', message);
     });
@@ -359,7 +369,7 @@ export class Consumer extends EventEmitter {
   }
 
   private async deleteMessageBatch(messages: SQSMessage[]): Promise<void> {
-    debug('Deleting messages %s', messages.map((msg) => msg.MessageId).join(' ,'));
+    console.log('Deleting messages %s', messages.map((msg) => msg.MessageId).join(' ,'));
 
     const deleteParams = {
       QueueUrl: this.queueUrl,
@@ -379,6 +389,7 @@ export class Consumer extends EventEmitter {
   }
 
   private async executeBatchHandler(messages: SQSMessage[]): Promise<void> {
+    console.log('in executeBatchHandler'); 
     try {
       await this.handleMessageBatch(messages);
     } catch (err) {
@@ -388,6 +399,7 @@ export class Consumer extends EventEmitter {
   }
 
   private async changeVisabilityTimeoutBatch(messages: SQSMessage[], timeout: number): Promise<PromiseResult<any, AWSError>> {
+    console.log('in changeVisabilityTimeoutBatch');
     const params = {
       QueueUrl: this.queueUrl,
       Entries: messages.map((message) => ({
@@ -407,6 +419,7 @@ export class Consumer extends EventEmitter {
 
   private startHeartbeat(heartbeatFn: (elapsedSeconds: number) => void): NodeJS.Timeout {
     const startTime = Date.now();
+    console.log('in startHeartBeat');
     return setInterval(() => {
       const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
       heartbeatFn(elapsedSeconds);
