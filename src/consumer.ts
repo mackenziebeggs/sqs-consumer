@@ -24,17 +24,19 @@ interface TimeoutResponse {
 }
 
 
-//function hello(thing: string): void{
-//console.log(`hello ${thing}`);
-//}
+
+function SystemInactivityError(message) {
+  this.message = message;
+  this.name = 'SystemInactivityError';
+}
 
 var globalTime = Date.now();
 function checkTimeout(startTime: number, reset: boolean): void{
   const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
   console.log(`Time: ${elapsedSeconds}`);
   
-  if (elapsedSeconds >= 120){
-      console.log(`TODO: spawn timeout err`);
+  if (elapsedSeconds >= 60){
+    throw new SystemInactivityError('It has been more 120 since the last message was received. Shutting down');
   }
 
   if ((reset == true) && (elapsedSeconds >= 100)){
@@ -283,7 +285,8 @@ export class Consumer extends EventEmitter {
     let pending;
     try {
      console.log('In executeHandler try before if');
-     if (this.handleMessageTimeout) {
+     if (this.handleMessageTimeout) { 
+        console.log('In executeHandler try after if');
         [timeout, pending] = createTimeout(this.handleMessageTimeout);
         await Promise.race([
           this.handleMessage(message),
