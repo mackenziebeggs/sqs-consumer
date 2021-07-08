@@ -1,12 +1,12 @@
 import { AWSError } from 'aws-sdk';
 import * as SQS from 'aws-sdk/clients/sqs';
 import { PromiseResult } from 'aws-sdk/lib/request';
-//import * as Debug from 'debug';
+import * as Debug from 'debug';
 import { EventEmitter } from 'events';
 import { autoBind } from './bind';
 import { SQSError, TimeoutError } from './errors';
 
-//const debug = Debug('sqs-consumer');
+const debug = Debug('sqs-consumer');
 
 type ReceieveMessageResponse = PromiseResult<SQS.Types.ReceiveMessageResult, AWSError>;
 type ReceiveMessageRequest = SQS.Types.ReceiveMessageRequest;
