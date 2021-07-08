@@ -28,15 +28,18 @@ interface TimeoutResponse {
 //console.log(`hello ${thing}`);
 //}
 
-const globalTime = Date.now();
+var globalTime = Date.now();
 function checkTimeout(startTime: number, reset: boolean): void{
   const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
   console.log(`Time: ${elapsedSeconds}`);
-  if (elapsedSeconds >= 60){
+  
+  if (elapsedSeconds >= 120){
       console.log(`TODO: spawn timeout err`);
   }
-  if (reset == true){
-      console.log(`TODO: RESET TIMER`);
+
+  if ((reset == true) && (elapsedSeconds >= 100)){
+      console.log(`MESSAGE RECEIVED RESET TIMER`);
+      globalTime = Date.now();
   }
 }    
 
