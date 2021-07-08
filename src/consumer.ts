@@ -23,6 +23,23 @@ interface TimeoutResponse {
   pending: Promise<void>;
 }
 
+
+//function hello(thing: string): void{
+//console.log(`hello ${thing}`);
+//}
+
+const globalTime = Date.now();
+function checkTimeout(startTime: number, reset: boolean): void{
+  const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
+  console.log(`Time: ${elapsedSeconds}`);
+  if (elapsedSeconds >= 60){
+      console.log(`TODO: spawn timeout err`);
+  }
+  if (reset == true){
+      console.log(`TODO: RESET TIMER`);
+  }
+}    
+
 function createTimeout(duration: number): TimeoutResponse[] {
   console.log('in createTimeout'); 
   let timeout;
@@ -183,8 +200,12 @@ export class Consumer extends EventEmitter {
     console.log('In private async handleSqsResponse');
     console.log('Received SQS response: ');
     console.log(response);
+    //here for now, TODO remove 
+    checkTimeout(globalTime, true);
     if (response) {
       if (hasMessages(response)) {
+        //if there is a message reset the timer
+        checkTimeout(globalTime, true);
         if (this.handleMessageBatch) {
           // prefer handling messages in batch when available
           await this.processMessageBatch(response.Messages);
@@ -195,6 +216,7 @@ export class Consumer extends EventEmitter {
       } else {
         this.emit('empty');
         console.log('empty');
+        checkTimeout(globalTime, false);
       }
     }
   }
