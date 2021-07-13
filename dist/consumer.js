@@ -20,7 +20,7 @@ var globalTime = Date.now();
 function checkTimeout(startTime, reset) {
     const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
     debug(`Time: ${elapsedSeconds}`);
-    if (elapsedSeconds >= 60) {
+    if (elapsedSeconds >= 20) {
         throw new SystemInactivityError('Excessive time since last message. System will shut down.');
     }
     //for debugging
