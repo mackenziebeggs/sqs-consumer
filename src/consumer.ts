@@ -31,16 +31,19 @@ function SystemInactivityError(message) {
 }
 
 var globalTime = Date.now();
+var timeoutFlag = false;
 function checkTimeout(startTime: number, reset: boolean): void{
   const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
   console.log(`Time: ${elapsedSeconds}`);
   if (elapsedSeconds >= 60){
+	timeoutFlag = true;
     throw new SystemInactivityError('Excessive time since last message. System will shut down.');
   }
   //for debugging
   if ((reset == true) && (elapsedSeconds >= 100)){
   //if (reset == true){
       console.log(`MESSAGE RECEIVED RESET TIMER`);
+      timeoutFlag = false;
       globalTime = Date.now();
   }
 }    
@@ -206,11 +209,13 @@ export class Consumer extends EventEmitter {
     console.log('Received SQS response: ');
     console.log(response);
     //here for debugging 
-    checkTimeout(globalTime, true);
+    if (timeoutFlag == false){
+     checkTimeout(globalTime, true);
+	}
     if (response) {
       if (hasMessages(response)) {
         //if there is a message reset the timer
-        checkTimeout(globalTime, true);
+        checkTimeout(globalTime, true);	
         if (this.handleMessageBatch) {
           // prefer handling messages in batch when available
           await this.processMessageBatch(response.Messages);
@@ -221,7 +226,9 @@ export class Consumer extends EventEmitter {
       } else {
         this.emit('empty');
         console.log('empty');
-        checkTimeout(globalTime, false);
+        if (timeoutFlag == false){
+		  checkTimeout(globalTime, false);
+		}
       }
     }
   }
