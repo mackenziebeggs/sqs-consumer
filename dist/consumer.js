@@ -17,10 +17,12 @@ function SystemInactivityError(message) {
     this.name = 'SystemInactivityError';
 }
 var globalTime = Date.now();
+var timeoutFlag = false;
 function checkTimeout(startTime, reset) {
     const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
     debug(`Time: ${elapsedSeconds}`);
     if (elapsedSeconds >= 20) {
+        timeoutFlag = true;
         throw new SystemInactivityError('Excessive time since last message. System will shut down.');
     }
     //for debugging
@@ -28,6 +30,7 @@ function checkTimeout(startTime, reset) {
     if (reset == true) {
         debug(`MESSAGE RECEIVED RESET TIMER`);
         globalTime = Date.now();
+        timeoutFlag = false;
     }
 }
 function createTimeout(duration) {
@@ -144,7 +147,9 @@ class Consumer extends events_1.EventEmitter {
             else {
                 this.emit('empty');
                 debug('empty');
-                checkTimeout(globalTime, false);
+                if (timeoutFlag == false) {
+                    checkTimeout(globalTime, false);
+                }
             }
         }
     }
