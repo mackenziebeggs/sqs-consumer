@@ -32,19 +32,18 @@ function SystemInactivityError(message) {
 
 var globalTime = Date.now();
 var timeoutFlag = false;
-function checkTimeout(startTime: number, reset: boolean): void{
-  const elapsedSeconds = Math.ceil((Date.now() - startTime) / 1000);
+function checkTimeout(reset: boolean): void{
+  if (reset == true){
+      console.log(`MESSAGE RECEIVED RESET TIMER`);
+      globalTime = Date.now();
+      timeoutFlag = false;
+  }
+  const elapsedSeconds = Math.ceil((Date.now() - globalTime) / 1000);
+  //for debugging
   console.log(`Time since last message: ${elapsedSeconds}`);
   if (elapsedSeconds >= 60){
 	timeoutFlag = true;
     throw new SystemInactivityError('Excessive time since last message. System will shut down.');
-  }
-  //for debugging
-  //if ((reset == true) && (elapsedSeconds >= 100)){
-  if (reset == true){
-      console.log(`MESSAGE RECEIVED RESET TIMER`);
-      timeoutFlag = false;
-      globalTime = Date.now();
   }
 }    
 
@@ -205,20 +204,18 @@ export class Consumer extends EventEmitter {
   }
 
   private async handleSqsResponse(response: ReceieveMessageResponse): Promise<void> {
-    console.log('In private async handleSqsResponse');
+    //console.log('In private async handleSqsResponse');
     console.log('Received SQS response: ');
-    console.log(response);
+    //console.log(response);
     //here for debugging 
     //if (timeoutFlag == false){
     // checkTimeout(globalTime, true);
 	//}
     //console.log('control flow after first checktimeout');
     if (response) {
-      console.log('HERE');
       if (hasMessages(response)) {
         //if there is a message reset the timer
-        console.log('HERE1');
-        checkTimeout(globalTime, true);	
+        checkTimeout(true);	
         if (this.handleMessageBatch) {
           // prefer handling messages in batch when available
           await this.processMessageBatch(response.Messages);
@@ -230,7 +227,7 @@ export class Consumer extends EventEmitter {
         this.emit('empty');
         console.log('No Messages detected');
         if (timeoutFlag == false){
-		  checkTimeout(globalTime, false);
+		  checkTimeout(false);
 		}
       }
     }
