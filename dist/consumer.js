@@ -26,7 +26,7 @@ function checkTimeout(reset) {
     const elapsedSeconds = Math.ceil((Date.now() - globalTime) / 1000);
     //for debugging
     console.log(`Time since last message: ${elapsedSeconds}`);
-    if (elapsedSeconds >= 60) {
+    if (elapsedSeconds >= 600) {
         timeoutFlag = true;
         throw new SystemInactivityError('Excessive time since last message. System will shut down.');
     }
