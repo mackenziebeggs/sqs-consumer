@@ -16,15 +16,18 @@ function SystemInactivityError(message) {
     this.name = 'SystemInactivityError';
 }
 var globalTime = Date.now();
+var timeoutFlag = false;
 function checkTimeout(reset) {
     if (reset == true) {
-        console.log(`SQSCON: MESSAGE RECEIVED RESET TIMER`);
+        console.log(`MESSAGE RECEIVED RESET TIMER`);
         globalTime = Date.now();
+        timeoutFlag = false;
     }
     const elapsedSeconds = Math.ceil((Date.now() - globalTime) / 1000);
     //for debugging
     console.log(`Time since last message: ${elapsedSeconds}`);
-    if (elapsedSeconds >= 60) {
+    if (elapsedSeconds >= 600) {
+        timeoutFlag = true;
         throw new SystemInactivityError('Excessive time since last message. System will shut down.');
     }
 }
@@ -132,6 +135,7 @@ class Consumer extends events_1.EventEmitter {
         if (response) {
             if (hasMessages(response)) {
                 //if there is a message reset the timer
+                checkTimeout(true);
                 if (this.handleMessageBatch) {
                     // prefer handling messages in batch when available
                     await this.processMessageBatch(response.Messages);
@@ -140,13 +144,13 @@ class Consumer extends events_1.EventEmitter {
                     await Promise.all(response.Messages.map(this.processMessage));
                 }
                 this.emit('response_processed');
-                console.log(`SQSCON: MESSAGE DELETED`);
-                checkTimeout(true);
             }
             else {
                 this.emit('empty');
                 console.log('No Messages detected');
-                checkTimeout(false);
+                if (timeoutFlag == false) {
+                    checkTimeout(false);
+                }
             }
         }
     }
