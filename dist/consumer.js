@@ -28,6 +28,7 @@ function checkTimeout(reset) {
     console.log(`Time since last message: ${elapsedSeconds}`);
     if (elapsedSeconds >= 600) {
         timeoutFlag = true;
+        console.log('SQSCON: THRESHOLD EXCEEDED; THROWING ERROR');
         throw new SystemInactivityError('Excessive time since last message. System will shut down.');
     }
 }
