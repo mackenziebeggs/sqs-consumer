@@ -41,7 +41,7 @@ function checkTimeout(reset: boolean): void{
   const elapsedSeconds = Math.ceil((Date.now() - globalTime) / 1000);
   //for debugging
   console.log(`Time since last message: ${elapsedSeconds}`);
-  if (elapsedSeconds >= 600){
+  if (elapsedSeconds >= 1800){
 	timeoutFlag = true;
     console.log('SQSCON: THRESHOLD EXCEEDED; THROWING ERROR');
     throw new SystemInactivityError('Excessive time since last message. System will shut down.');
